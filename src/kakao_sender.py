@@ -71,7 +71,7 @@ def _get_access_token() -> str:
     return token["access_token"]
 
 
-def send_text(text: str, web_url: str | None = None) -> None:
+def send_text(text: str, web_url: str | None = None, button_title: str | None = None) -> None:
     template_object = {
         "object_type": "text",
         "text": text,
@@ -80,6 +80,9 @@ def send_text(text: str, web_url: str | None = None) -> None:
             "mobile_web_url": web_url or "https://finance.naver.com",
         },
     }
+    if button_title:
+        template_object["button_title"] = button_title
+
     access_token = _get_access_token()
     retry_call(lambda: _post_template(access_token, template_object), label="텍스트 메시지 전송")
 

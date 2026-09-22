@@ -54,3 +54,7 @@ LOG_PATH = BASE_DIR / os.getenv("LOG_PATH", "logs/app.log")
 # --- HTML 리포트 ---
 SAVE_HTML_REPORT = os.getenv("SAVE_HTML_REPORT", "true").lower() == "true"
 REPORTS_DIR = BASE_DIR / os.getenv("REPORTS_DIR", "reports")
+
+# --- GitHub Pages 배포 (카카오톡 링크 버튼용) ---
+# 비워두면 배포를 건너뛴다. 예: https://bbddana.github.io/stock-news-kakao/
+PUBLISH_REPORT_URL = os.getenv("PUBLISH_REPORT_URL", "")

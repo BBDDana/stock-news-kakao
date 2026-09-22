@@ -13,6 +13,7 @@
 - 네트워크 실패 시 **자동 재시도** + **로그 파일** 기록 (`logs/app.log`)
 - (선택) **AI 한줄 요약** — Anthropic API 키가 있으면 오늘의 뉴스 흐름을 1~2문장으로 요약
 - 매 실행마다 표/색상을 갖춘 **HTML 프리뷰 리포트**를 `reports/latest.html`에 저장 (카카오톡 텍스트보다 훨씬 보기 좋은 시각적 버전)
+- (선택) **GitHub Pages 자동 배포** — 리포트를 매번 공개 URL로 발행하고, 카카오톡 메시지에 "리포트 보기" 링크 버튼을 함께 전송
 
 ## 구성
 
@@ -28,12 +29,14 @@
 │   ├── watchlist.py      # 관심종목 시세 (watchlist.json 카테고리별 그룹 지원)
 │   ├── ai_summary.py     # (선택) AI 한줄 요약
 │   ├── html_report.py    # 표+색상을 갖춘 HTML 프리뷰 리포트 생성
+│   ├── publish_report.py # docs/index.html 갱신 + GitHub Pages 자동 push
 │   ├── kakao_auth.py     # 최초 1회: 카카오 로그인으로 토큰 발급
 │   ├── kakao_sender.py   # 텍스트/카드형 전송 (토큰 자동 갱신, 실패 시 폴백)
 │   └── main.py            # 전체 실행 (수집 → 요약 → 전송)
 ├── tokens/                 # 발급된 access/refresh 토큰 저장 (git 제외)
 ├── logs/                   # 실행 로그 (git 제외)
 ├── reports/                # HTML 프리뷰 리포트 (git 제외, latest.html이 최신본)
+├── docs/                   # GitHub Pages로 배포되는 공개 리포트 (index.html, git 포함)
 ├── requirements.txt
 ├── requirements-ai.txt     # AI 요약 기능용 선택 설치
 ├── watchlist.json          # 관심종목 카테고리별 목록
@@ -125,6 +128,25 @@ python -m src.main --mode open
 
 실행할 때마다 `reports/latest.html`에 표와 색상(🔺상승 빨강 / 🔻하락 파랑)을 갖춘 프리뷰 리포트도 저장됩니다. 더블클릭해서 브라우저로 열어보세요. 끄고 싶으면 `.env`에서 `SAVE_HTML_REPORT=false`.
 
+## 5-1. (선택) GitHub Pages로 리포트를 카카오톡 링크 버튼으로 받기
+
+카카오톡 메시지는 HTML을 렌더링하지 못하므로, 표/색상이 있는 예쁜 버전을 카카오톡 "안에서" 보려면 그 리포트가 인터넷 URL로 접속 가능해야 합니다. 이 프로젝트는 GitHub Pages에 매 실행마다 자동으로 리포트를 배포하고, 카카오톡 메시지에 "리포트 보기" 버튼을 추가하는 방식을 사용합니다.
+
+1. GitHub 계정으로 새 저장소를 만듭니다 (Public이어야 무료 Pages 사용 가능 — 링크를 아는 사람만 볼 수 있고 검색엔 노출되지 않음).
+2. [GitHub CLI](https://cli.github.com/) 설치 후 `gh auth login --web`으로 로그인, `gh auth setup-git`으로 git 인증 연결.
+3. 로컬 저장소에 원격 저장소 연결 후 최초 푸시:
+   ```bash
+   git remote add origin https://github.com/<아이디>/<저장소>.git
+   git branch -M main
+   git push -u origin main
+   ```
+4. 저장소의 **Settings > Pages**에서 Source를 `main` 브랜치의 `/docs` 폴더로 지정 후 저장. 1~2분 후 `https://<아이디>.github.io/<저장소>/`에서 접속됩니다.
+5. `.env`의 `PUBLISH_REPORT_URL`에 그 주소를 입력합니다 (끝에 `/` 포함).
+
+이후 `python -m src.main`을 실행할 때마다 `docs/index.html`이 갱신되고 자동으로 `git commit && git push`되어 GitHub Pages가 최신 리포트로 업데이트되며, 카카오톡에 "📊 표/색상 버전으로 보기" 메시지와 **리포트 보기** 버튼이 함께 전송됩니다. 끄고 싶으면 `.env`의 `PUBLISH_REPORT_URL`을 비워두세요.
+
+> 작업 스케줄러로 무인 실행할 때도 git push가 동작하려면, 위 `gh auth login`을 **작업을 실행할 Windows 계정**으로 한 번 로그인해 둬야 합니다 (자격 정보가 전역 git 설정에 저장됨).
+
 ## 6. 매일 자동 실행 등록 (Windows 작업 스케줄러)
 
 장전/장마감 두 번 받고 싶다면 `run_morning.bat`, `run_close.bat`을 각각 등록합니다. 하나만 받고 싶다면 `run_morning.bat`만 등록해도 됩니다.
@@ -144,6 +166,7 @@ schtasks /create /tn "증권뉴스_장마감" /tr "C:\Users\tmddu\OneDrive\Deskt
 - **일부 지수/관심종목이 요약에서 빠짐**: 해당 데이터 소스가 일시적으로 실패한 것으로, 나머지 항목은 정상 발송됩니다 (재시도 후에도 실패한 항목만 조용히 생략)
 - **뉴스가 너무 많거나 적음**: `.env`의 `NEWS_COUNT` 조정
 - **카드형 메시지 대신 텍스트만 받고 싶음**: `.env`에서 `USE_LIST_TEMPLATE=false`
+- **"리포트 보기" 버튼이 안 옴 / GitHub Pages가 갱신 안 됨**: `logs/app.log`에서 `git push 실패` 메시지 확인 → `gh auth status`로 로그인 상태 점검, `PUBLISH_REPORT_URL`이 정확한지(끝 `/` 포함) 확인
 
 ## 다음 단계 (추가 확장 아이디어)
 

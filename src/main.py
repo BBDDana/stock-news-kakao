@@ -16,6 +16,7 @@ from src.kakao_sender import send_news_list, send_text
 from src.logger import get_logger
 from src.market_index import fetch_market_data, format_market_summary
 from src.news_fetcher import NewsItem, fetch_news
+from src.publish_report import publish_report
 from src.watchlist import fetch_watchlist_data, format_watchlist_summary
 
 logger = get_logger()
@@ -71,6 +72,7 @@ def run(mode: str) -> None:
 
     label = MODE_LABEL.get(mode, MODE_LABEL["default"])
 
+    report_url = None
     if SAVE_HTML_REPORT:
         try:
             html = build_html(
@@ -83,8 +85,9 @@ def run(mode: str) -> None:
             )
             report_path = save_report(html, mode)
             logger.info(f"HTML 리포트 저장: {report_path}")
+            report_url = publish_report(report_path)
         except Exception:
-            logger.exception("HTML 리포트 생성 중 오류가 발생했습니다.")
+            logger.exception("HTML 리포트 생성/배포 중 오류가 발생했습니다.")
 
     if USE_LIST_TEMPLATE:
         send_news_list(header_title=f"📰 {label} · 오늘의 증권뉴스", news=news)
@@ -95,6 +98,13 @@ def run(mode: str) -> None:
     else:
         message = format_text_message(mode, news, market_summary, watchlist_summary, ai_summary)
         send_text(message, web_url=news[0].link)
+
+    if report_url:
+        send_text(
+            f"📊 {label} 표/색상 버전으로 보기",
+            web_url=report_url,
+            button_title="리포트 보기",
+        )
 
     logger.info(f"증권뉴스({label})를 카카오톡으로 전송했습니다. (뉴스 {len(news)}건)")
 
