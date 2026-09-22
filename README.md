@@ -74,6 +74,10 @@ pip install -r requirements-ai.txt
 3. [제품 설정 > 카카오 로그인 > 일반] → 사용 설정 ON
 4. [제품 설정 > 카카오 로그인 > 동의항목] → **카카오톡 메시지 전송(talk_message)** 을 "선택 동의" 또는 "이용 중 동의"로 설정 (개인 개발자 앱은 "필수 동의"가 제공되지 않는 경우가 있음 — 둘 중 하나면 충분)
    - 개인 개발자 앱은 별도 심사 없이 본인 계정으로는 바로 사용 가능합니다.
+5. **[앱 > 제품 링크 관리 > 웹 도메인]** → 메시지에 링크/버튼으로 쓸 도메인을 모두 등록 (최대 10개). **등록 안 된 도메인은 API가 성공(`result_code:0`)해도 링크/버튼이 조용히 사라집니다.** 최소한 아래는 등록하세요:
+   - `https://<GitHub Pages 아이디>.github.io` (5-1단계에서 만들 리포트 사이트)
+   - `.env`의 `RSS_URLS`에 쓰는 뉴스 도메인 (기본값 기준 `https://www.hankyung.com`, `https://www.yna.co.kr`)
+   - `https://finance.naver.com` (기본 링크 폴백)
 
 ## 3. 환경변수 설정
 
@@ -167,6 +171,7 @@ schtasks /create /tn "증권뉴스_장마감" /tr "C:\Users\tmddu\OneDrive\Deskt
 - **뉴스가 너무 많거나 적음**: `.env`의 `NEWS_COUNT` 조정
 - **카드형 메시지 대신 텍스트만 받고 싶음**: `.env`에서 `USE_LIST_TEMPLATE=false`
 - **"리포트 보기" 버튼이 안 옴 / GitHub Pages가 갱신 안 됨**: `logs/app.log`에서 `git push 실패` 메시지 확인 → `gh auth status`로 로그인 상태 점검, `PUBLISH_REPORT_URL`이 정확한지(끝 `/` 포함) 확인
+- **메시지는 오는데 링크/버튼만 안 보임 (API는 `result_code:0`으로 성공)**: 해당 링크의 도메인이 [앱 > 제품 링크 관리 > 웹 도메인]에 등록 안 된 경우입니다. 위 2-5단계대로 도메인을 등록하세요 — 등록되지 않은 도메인의 링크는 에러 없이 조용히 생략됩니다.
 
 ## 다음 단계 (추가 확장 아이디어)
 
