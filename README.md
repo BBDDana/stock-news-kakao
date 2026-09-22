@@ -14,6 +14,7 @@
 - (선택) **AI 한줄 요약** — Anthropic API 키가 있으면 오늘의 뉴스 흐름을 1~2문장으로 요약
 - 매 실행마다 표/색상을 갖춘 **HTML 프리뷰 리포트**를 `reports/latest.html`에 저장 (카카오톡 텍스트보다 훨씬 보기 좋은 시각적 버전)
 - (선택) **GitHub Pages 자동 배포** — 리포트를 매번 공개 URL로 발행하고, 카카오톡 메시지에 "리포트 보기" 링크 버튼을 함께 전송
+- **웹 UI 설정 대시보드** — `.env`/`watchlist.json`/발송 스케줄을 파일 편집 없이 브라우저에서 관리
 
 ## 구성
 
@@ -32,6 +33,7 @@
 │   ├── publish_report.py # docs/index.html 갱신 + GitHub Pages 자동 push
 │   ├── kakao_auth.py     # 최초 1회: 카카오 로그인으로 토큰 발급
 │   ├── kakao_sender.py   # 텍스트/카드형 전송 (토큰 자동 갱신, 실패 시 폴백)
+│   ├── dashboard.py      # 웹 UI 설정 대시보드 (Flask, http://127.0.0.1:5050)
 │   └── main.py            # 전체 실행 (수집 → 요약 → 전송)
 ├── tokens/                 # 발급된 access/refresh 토큰 저장 (git 제외)
 ├── logs/                   # 실행 로그 (git 제외)
@@ -42,7 +44,8 @@
 ├── watchlist.json          # 관심종목 카테고리별 목록
 ├── .env.example
 ├── run_morning.bat         # 장전 브리핑 (작업 스케줄러 등록용)
-└── run_close.bat           # 장마감 브리핑 (작업 스케줄러 등록용)
+├── run_close.bat           # 장마감 브리핑 (작업 스케줄러 등록용)
+└── run_dashboard.bat       # 설정 대시보드 실행
 ```
 
 ## 0. Python 설치
@@ -110,7 +113,7 @@ Invoke-RestMethod "https://ac.stock.naver.com/ac?q=$q&target=stock,index" | Sele
 
 카테고리 없이 간단히 쓰고 싶다면 `watchlist.json`을 삭제하고 `.env`의 `WATCHLIST=005930:삼성전자,035420:NAVER` 형식을 대신 사용하면 됩니다.
 
-**키워드 필터 예시**: `KEYWORDS=삼성전자,반도체,금리` — 제목에 하나라도 포함된 뉴스만 발송
+**키워드 우선 배치 예시**: `KEYWORDS=삼성전자,반도체,금리` — 제목에 하나라도 포함된 뉴스를 상단에 배치 (전체 뉴스는 계속 수신되며, `NEWS_COUNT`의 최소 절반은 항상 일반 뉴스로 채워짐)
 
 ## 4. 최초 토큰 발급 (1회만)
 
@@ -150,6 +153,24 @@ python -m src.main --mode open
 이후 `python -m src.main`을 실행할 때마다 `docs/index.html`이 갱신되고 자동으로 `git commit && git push`되어 GitHub Pages가 최신 리포트로 업데이트되며, 카카오톡에 "📊 표/색상 버전으로 보기" 메시지와 **리포트 보기** 버튼이 함께 전송됩니다. 끄고 싶으면 `.env`의 `PUBLISH_REPORT_URL`을 비워두세요.
 
 > 작업 스케줄러로 무인 실행할 때도 git push가 동작하려면, 위 `gh auth login`을 **작업을 실행할 Windows 계정**으로 한 번 로그인해 둬야 합니다 (자격 정보가 전역 git 설정에 저장됨).
+
+## 5-2. (선택) 웹 UI 설정 대시보드
+
+`.env`나 `watchlist.json`을 직접 열어 편집하는 대신, 브라우저에서 관리할 수 있습니다.
+
+```bash
+python -m src.dashboard
+```
+
+또는 `run_dashboard.bat`을 더블클릭하세요. 브라우저가 자동으로 `http://127.0.0.1:5050`을 엽니다 (내 PC에서만 접속 가능, 외부에 노출되지 않음).
+
+대시보드에서 할 수 있는 것:
+- **발송 스케줄**: 작업 스케줄러에 등록된 장전/장마감 시간을 조회하고 바로 변경 (내부적으로 `schtasks`를 호출)
+- **뉴스 설정**: RSS 소스, 뉴스 개수, 우선 배치 키워드, 중복 판단 유사도
+- **메시지 옵션**: 시장 지표 포함 여부, 카드형 템플릿, HTML 리포트 저장, GitHub Pages URL
+- **AI 요약**: 사용 여부, API 키(입력 시에만 갱신, 평소엔 비워둔 채로 표시), 모델명
+- **관심종목**: `watchlist.json`을 카테고리·종목 단위로 추가/삭제/수정
+- **저장 및 테스트**: 설정 저장, 장전/장마감 테스트 발송(실제로 카카오톡이 발송됩니다), 최근 로그 확인
 
 ## 6. 매일 자동 실행 등록 (Windows 작업 스케줄러)
 
