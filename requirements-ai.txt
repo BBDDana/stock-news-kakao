@@ -1,0 +1,3 @@
+# USE_AI_SUMMARY=true 로 AI 한줄 요약 기능을 쓸 때만 추가 설치
+# pip install -r requirements-ai.txt
+anthropic>=0.40.0

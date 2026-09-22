@@ -1,0 +1,25 @@
+{
+  "반도체 및 AI": [
+    {"code": "000660", "name": "SK하이닉스"},
+    {"code": "005930", "name": "삼성전자"},
+    {"code": "469150", "name": "ACE AI반도체TOP3+"},
+    {"code": "395160", "name": "KODEX AI반도체TOP2플러스"},
+    {"code": "0167A0", "name": "SOL AI반도체TOP2플러스"},
+    {"code": "396500", "name": "TIGER 반도체TOP10"}
+  ],
+  "지수형 ETF (미국 대표지수)": [
+    {"code": "379810", "name": "KODEX 미국나스닥100"},
+    {"code": "379800", "name": "KODEX 미국S&P500"},
+    {"code": "284430", "name": "KODEX 200미국채혼합50"}
+  ],
+  "원자재, 조선": [
+    {"code": "411060", "name": "ACE KRX금현물"},
+    {"code": "494670", "name": "TIGER 조선TOP10"}
+  ],
+  "원자력 및 전력 인프라": [
+    {"code": "487240", "name": "KODEX AI전력핵심설비"},
+    {"code": "034020", "name": "두산에너빌리티"},
+    {"code": "433500", "name": "ACE 원자력TOP10"},
+    {"code": "0091P0", "name": "TIGER 코리아원자력"}
+  ]
+}
