@@ -1,4 +1,4 @@
-"""여러 RSS 소스에서 증권 뉴스를 모아 중복 제거/키워드 필터링 후 반환한다."""
+"""여러 RSS 소스에서 증권 뉴스를 모아 중복 제거 후 반환한다. KEYWORDS에 걸리는 뉴스는 상단에 우선 배치된다."""
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from difflib import SequenceMatcher
@@ -54,10 +54,22 @@ def _dedup(items: list[NewsItem]) -> list[NewsItem]:
     return unique
 
 
-def _matches_keywords(item: NewsItem) -> bool:
-    if not KEYWORDS:
-        return True
+def _is_priority(item: NewsItem) -> bool:
     return any(keyword in item.title for keyword in KEYWORDS)
+
+
+def _prioritize(items: list[NewsItem], count: int) -> list[NewsItem]:
+    """KEYWORDS에 걸리는 뉴스를 상단으로 올리되, 최소 절반은 일반 뉴스로 채워 전체 뉴스 흐름도 유지한다."""
+    if not KEYWORDS:
+        return items[:count]
+
+    priority = [i for i in items if _is_priority(i)]
+    rest = [i for i in items if not _is_priority(i)]
+
+    priority_slots = max(1, count // 2)
+    chosen_priority = priority[:priority_slots]
+    chosen_rest = rest[: count - len(chosen_priority)]
+    return chosen_priority + chosen_rest
 
 
 def fetch_news(count: int = NEWS_COUNT) -> list[NewsItem]:
@@ -69,9 +81,8 @@ def fetch_news(count: int = NEWS_COUNT) -> list[NewsItem]:
             logger.error(f"RSS 소스를 건너뜁니다: {url} ({exc})")
 
     all_items.sort(key=lambda i: i.published.timestamp() if i.published else 0.0, reverse=True)
-    filtered = [i for i in all_items if _matches_keywords(i)]
-    deduped = _dedup(filtered)
-    return deduped[:count]
+    deduped = _dedup(all_items)
+    return _prioritize(deduped, count)
 
 
 if __name__ == "__main__":
